@@ -5,7 +5,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 import mlflow
 import mlflow.sklearn
 import logging
-import numpy as np # Pastikan numpy diimpor di sini untuk np.sqrt
+import numpy as np 
 
 # Konfigurasi logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -13,9 +13,6 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 def train_model():
     logging.info("Starting model training process.")
     
-    # Set URI tracking MLflow (lokal)
-    # Jika Anda menjalankan MLflow UI dengan `mlflow ui` di port 5000,
-    # maka ini tidak perlu diubah.
     mlflow.set_tracking_uri("http://127.0.0.1:5000") 
     logging.info("MLflow tracking URI set to http://127.0.0.1:5000.")
 
@@ -43,19 +40,18 @@ def train_model():
             logging.error(f"An error occurred while loading the dataset: {e}")
             return
 
-        # Feature Engineering (ulangi seperti di preprocessing Anda)
+        # Feature Engineering
         # Pastikan kolom 'Date' ada dan dikonversi jika belum (jika preprocessing tidak menyimpan Date)
         if 'Date' in df.columns:
             df['Date'] = pd.to_datetime(df['Date'])
             df['Month'] = df['Date'].dt.month
             df['Year'] = df['Date'].dt.year
-            df = df.drop('Date', axis=1) # Drop original Date column after extraction
+            df = df.drop('Date', axis=1) 
             logging.info("Date column processed for Month and Year features.")
         else:
             logging.warning("Date column not found. Ensure preprocessing output includes it if needed for feature engineering.")
 
         # Create lagged features - Perlu grouping by 'Store'
-        # Perlu dipastikan kolom Store ada dan Weekly_Sales
         if 'Store' in df.columns and 'Weekly_Sales' in df.columns:
             df['Weekly_Sales_Lag1'] = df.groupby('Store')['Weekly_Sales'].shift(1)
             df['Weekly_Sales_Lag2'] = df.groupby('Store')['Weekly_Sales'].shift(2)
@@ -83,8 +79,7 @@ def train_model():
         logging.info(f"Dataset shape after dropping remaining NaNs: {df.shape}")
 
         # Definisikan fitur (X) dan variabel target (y)
-        # Pastikan semua kolom yang Anda gunakan di preprocessing sudah ada
-        # Hapus kolom yang bukan fitur, misal 'Store' jika tidak digunakan sebagai fitur
+        # Hapus kolom yang bukan fitur
         features = [col for col in df.columns if col not in ['Weekly_Sales']]
         X = df[features]
         y = df['Weekly_Sales']
@@ -118,8 +113,6 @@ def train_model():
         r2 = r2_score(y_test, y_pred)
 
         # Log metrik menggunakan MLflow (autolog akan melakukannya, tapi ini untuk eksplisit)
-        # Kita juga bisa menggunakan mlflow.log_metrics secara eksplisit, tetapi autolog akan menangani sebagian besar.
-        # Jika autolog tidak mencatat semua metrik, log_metrics manual ini bisa jadi fallback.
         mlflow.log_metric("mae", mae)
         mlflow.log_metric("mse", mse)
         mlflow.log_metric("rmse", rmse)
@@ -127,8 +120,6 @@ def train_model():
         logging.info(f"Model Metrics logged: MAE={mae:.2f}, MSE={mse:.2f}, RMSE={rmse:.2f}, R2 Score={r2:.2f}")
 
         # Log model secara eksplisit
-        # Ini adalah bagian yang paling penting untuk memastikan model tersimpan!
-        # "walmart_sales_dt_model" adalah nama folder yang akan dibuat di artifacts/
         mlflow.sklearn.log_model(model, "walmart_sales_dt_model")
         logging.info("Model logged to MLflow as 'walmart_sales_dt_model'.")
 
