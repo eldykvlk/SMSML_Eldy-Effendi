@@ -27,16 +27,7 @@ try:
         dst_path=LOCAL_DOWNLOAD_DIR
     )
     logging.info(f"Artifacts downloaded successfully to: {downloaded_path}")
-
-    # Path model yang sekarang ada di lokal Anda
-    # Ini adalah path yang akan Anda gunakan untuk `mlflow models serve`
-    # dan di `prometheus_exporter.py`
     local_model_path = os.path.join(downloaded_path, ARTIFACT_PATH_IN_RUN)
-    # ATAU jika downloaded_path sudah mengarah ke folder model:
-    # local_model_path = downloaded_path
-    
-    # Cara terbaik untuk mendapatkan path sebenarnya:
-    # downloaded_path itu sendiri sudah path ke folder model (misal: Monitoring_dan_Logging/mlruns_downloaded/walmart_sales_dt_model)
     print(f"\n--- IMPORTANT ---")
     print(f"Your LOCAL MODEL PATH is: {downloaded_path}")
     print(f"--- IMPORTANT ---\n")
