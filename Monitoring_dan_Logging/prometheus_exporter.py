@@ -16,7 +16,7 @@ INFERENCE_LATENCY = Gauge('model_inference_latency_seconds', 'Latency of model i
 INFERENCE_COUNT = Counter('model_inference_total', 'Total number of model inferences')
 INFERENCE_ERROR_COUNT = Counter('model_inference_errors_total', 'Total number of model inference errors')
 HIGH_SALES_PREDICTION_COUNT = Counter('model_high_sales_predictions_total', 'Total number of predictions exceeding a high sales threshold')
-HIGH_SALES_THRESHOLD = 150000.0 # Contoh ambang batas untuk "high sales", sesuaikan jika perlu
+HIGH_SALES_THRESHOLD = 150000.0 
 
 # --- Memuat model MLflow ---
 loaded_model = None
@@ -34,34 +34,24 @@ def collect_metrics():
         INFERENCE_ERROR_COUNT.inc()
         return
 
-    # --- Simulasi Data Input ---
-    # PENTING: Kolom-kolom ini harus SAMA PERSIS dengan fitur yang digunakan
-    # saat melatih model Anda di modelling.py, termasuk urutannya.
-    # Daftar fitur dari modelling.py Anda (setelah feature engineering):
-    # 'Store', 'Holiday_Flag', 'Temperature', 'Fuel_Price', 'CPI', 'Unemployment',
-    # 'Month', 'Year', 'Weekly_Sales_Lag1', 'Weekly_Sales_Lag2', 'Weekly_Sales_Lag4',
-    # 'Temperature_Fuel_Interaction'
-
     # Buat nilai dummy yang realistis untuk setiap fitur
     dummy_data = {
-        'Store': [random.randint(1, 45)], # Misal 1-45 toko
+        'Store': [random.randint(1, 45)], 
         'Holiday_Flag': [random.choice([0, 1])],
         'Temperature': [random.uniform(20.0, 80.0)],
         'Fuel_Price': [random.uniform(2.5, 4.5)],
         'CPI': [random.uniform(200.0, 220.0)],
         'Unemployment': [random.uniform(5.0, 10.0)],
         'Month': [random.randint(1, 12)],
-        'Year': [random.choice([2010, 2011, 2012])], # Sesuaikan tahun yang relevan dengan data training Anda
+        'Year': [random.choice([2010, 2011, 2012])], 
         'Weekly_Sales_Lag1': [random.uniform(50000.0, 200000.0)],
         'Weekly_Sales_Lag2': [random.uniform(50000.0, 200000.0)],
         'Weekly_Sales_Lag4': [random.uniform(50000.0, 200000.0)],
-        'Temperature_Fuel_Interaction': [0.0] # Ini akan dihitung ulang
+        'Temperature_Fuel_Interaction': [0.0] 
     }
 
     df_infer = pd.DataFrame(dummy_data)
     
-    # Recalculate interaction term for simulated data, seperti di modelling.py
-    # Pastikan kedua kolom ada sebelum mencoba mengalikan
     if 'Temperature' in df_infer.columns and 'Fuel_Price' in df_infer.columns:
         df_infer['Temperature_Fuel_Interaction'] = df_infer['Temperature'] * df_infer['Fuel_Price']
     else:
@@ -81,7 +71,7 @@ def collect_metrics():
         predicted_sales = prediction[0]
         logging.info(f"Inference successful. Latency: {latency:.4f}s, Predicted Sales: {predicted_sales:.2f}")
 
-        # Contoh metrik kondisional: Jika prediksi penjualan di atas ambang batas
+        # Metrik kondisional: Jika prediksi penjualan di atas ambang batas
         if predicted_sales > HIGH_SALES_THRESHOLD:
             HIGH_SALES_PREDICTION_COUNT.inc()
             logging.info(f"Predicted sales ({predicted_sales:.2f}) exceeded high sales threshold ({HIGH_SALES_THRESHOLD}).")
@@ -89,20 +79,18 @@ def collect_metrics():
     except Exception as e:
         INFERENCE_ERROR_COUNT.inc()
         logging.error(f"Error during inference: {e}")
-        # Cetak juga struktur DataFrame yang menyebabkan error untuk debugging
         logging.error(f"DataFrame causing error:\n{df_infer}")
         logging.error(f"Columns of DataFrame: {df_infer.columns.tolist()}")
 
 
 if __name__ == '__main__':
-    if loaded_model: # Hanya jalankan exporter jika model berhasil dimuat
+    if loaded_model:
         logging.info("Starting Prometheus exporter on port 8000...")
         start_http_server(8000)
         logging.info("Prometheus exporter started. Collecting metrics...")
         
-        # Hasilkan metrik buatan pada interval reguler
         while True:
             collect_metrics()
-            time.sleep(5) # Koleksi metrik setiap 5 detik
+            time.sleep(5)
     else:
         logging.critical("Model not loaded, Prometheus exporter will not start.")
